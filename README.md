@@ -9,6 +9,10 @@
 - 頻出単語を表形式でレポート出力
   - 固有名詞、前置詞、冠詞、代名詞、助動詞、be動詞は除外
   - 単語ごとに日本語の意味と例文を表示
+- 辞書検索機能
+  - 単語の日本語訳を取得
+  - 訳語を"/"区切りで分割し、指定された数だけを"/"区切りで返す
+  - 単語の原型を推測して検索（名詞の複数形、動詞の活用形、形容詞の比較級など）
 
 ## インストール方法
 
@@ -54,12 +58,28 @@ englishstudyhelper input/text.md -c config/custom_settings.json
 ```python
 from englishstudyhelper.analyzer import analyze_file
 from englishstudyhelper.reporter import generate_and_save_report
+from englishstudyhelper.dictionary import get_dictionary
 
 # テキストファイルを分析
 words = analyze_file('input/text.md')
 
 # レポートを生成して保存
 generate_and_save_report(words, 'output/result.md')
+
+# 辞書検索機能を使用
+dictionary = get_dictionary()
+
+# 単語の翻訳を取得（デフォルトで最大3つの訳語を返す）
+translation = dictionary.get_word_translation('book')
+print(translation)
+
+# 最大2つの訳語を指定して取得
+translation = dictionary.get_word_translation('book', max_translations=2)
+print(translation)
+
+# 品詞を指定して原型推測を使用
+translation = dictionary.get_word_translation('running', part_of_speech='VBG')
+print(translation)  # 'run'の訳語が返される
 ```
 
 ## 設定ファイル
@@ -70,6 +90,8 @@ generate_and_save_report(words, 'output/result.md')
 - `be_verbs`: 除外するbe動詞のリスト
 - `pos_translations`: 品詞タグの日本語訳
 - `word_translations`: 単語の日本語訳
+- `dictionary`: 辞書検索機能の設定
+  - `max_translations`: 返す訳語の最大数（デフォルト: 3）
 
 例：
 
@@ -91,6 +113,9 @@ generate_and_save_report(words, 'output/result.md')
     "word_translations": {
         "rabbit": "ウサギ",
         "test": "テスト"
+    },
+    "dictionary": {
+        "max_translations": 3
     }
 }
 ```

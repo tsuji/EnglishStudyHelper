@@ -28,10 +28,6 @@ class TestConfig(unittest.TestCase):
             "pos_translations": {
                 "NN": "名詞",
                 "VB": "動詞"
-            },
-            "word_translations": {
-                "test": "テスト",
-                "example": "例"
             }
         }
         
@@ -68,22 +64,6 @@ class TestConfig(unittest.TestCase):
         
         # 登録されていない品詞はそのまま返される
         self.assertEqual(config.get_pos_translation("JJ"), "JJ")
-    
-    def test_get_word_translation(self):
-        """
-        単語の翻訳取得テスト
-        """
-        config = Config(self.config_path)
-        
-        # 登録されている単語の翻訳を取得
-        self.assertEqual(config.get_word_translation("test"), "テスト")
-        self.assertEqual(config.get_word_translation("example"), "例")
-        
-        # 大文字小文字は区別しない
-        self.assertEqual(config.get_word_translation("TEST"), "テスト")
-        
-        # 登録されていない単語は None を返す
-        self.assertIsNone(config.get_word_translation("unknown"))
     
     def test_should_exclude_word(self):
         """

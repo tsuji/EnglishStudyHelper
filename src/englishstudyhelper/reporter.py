@@ -6,6 +6,7 @@ import textwrap
 
 from .word import Word
 from .config import get_config
+from .dictionary import get_dictionary
 
 
 def format_table_row(word: Word, translation: Optional[str], pos_translation: str, example: str) -> str:
@@ -53,6 +54,7 @@ def generate_report(words: List[Word]) -> str:
         str: レポート
     """
     config = get_config()
+    dictionary = get_dictionary()
     
     # 表のヘッダーを生成
     report = [generate_table_header()]
@@ -60,7 +62,7 @@ def generate_report(words: List[Word]) -> str:
     # 各単語の行を生成
     for word in words:
         # 単語の日本語訳を取得
-        translation = config.get_word_translation(word.text)
+        translation = dictionary.get_word_translation(word.text, word.pos)
         
         # 品詞の日本語訳を取得
         pos_translation = config.get_pos_translation(word.pos)

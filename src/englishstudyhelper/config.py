@@ -76,19 +76,6 @@ class Config:
         pos_translations = self.config_data.get('pos_translations', {})
         return pos_translations.get(pos, pos)
     
-    def get_word_translation(self, word: str) -> Optional[str]:
-        """
-        単語の日本語訳を取得する
-        
-        Args:
-            word (str): 単語
-        
-        Returns:
-            Optional[str]: 単語の日本語訳。翻訳が見つからない場合は None を返す。
-        """
-        word_translations = self.config_data.get('word_translations', {})
-        return word_translations.get(word.lower())
-    
     def should_exclude_word(self, word: str, pos: str) -> bool:
         """
         単語を除外すべきかどうかを判定する
@@ -109,6 +96,16 @@ class Config:
             return True
         
         return False
+        
+    def get_max_translations(self) -> int:
+        """
+        返す訳語の最大数を取得する
+        
+        Returns:
+            int: 返す訳語の最大数。設定されていない場合は3を返す。
+        """
+        dictionary_settings = self.config_data.get('dictionary', {})
+        return dictionary_settings.get('max_translations', 3)
 
 
 # シングルトンインスタンス
