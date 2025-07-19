@@ -1,0 +1,11 @@
+[project]
+name = "englishstudyhelper"
+version = "0.1.0"
+description = "English text analysis tool for language learners"
+requires-python = ">=3.13"
+dependencies = [
+    "nltk>=3.8.1",
+]
+
+[project.scripts]
+englishstudyhelper = "englishstudyhelper.main:main"
