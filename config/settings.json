@@ -5,7 +5,8 @@
         "DT",
         "PRP", "PRP$",
         "MD",
-        "VB", "VBD", "VBG", "VBN", "VBP", "VBZ"
+        "VB", "VBD", "VBG", "VBN", "VBP", "VBZ",
+        "TO", "CC", "EX","RP","WP", "PDT", "CD"
     ],
     "be_verbs": ["be", "am", "is", "are", "was", "were", "been", "being"],
     "pos_translations": {

@@ -94,8 +94,8 @@ def extract_sentences(text: str) -> List[str]:
     # NLTKのsentence tokenizerを使用
     sentences = nltk.sent_tokenize(text)
 
-    # 空の文を除外
-    sentences = [s.strip() for s in sentences if s.strip()]
+    # 空の文や記号のみの文を除外
+    sentences = [s.strip() for s in sentences if s.strip() and not all(c in '.,;:!?"\'()[]{}' for c in s.strip())]
 
     return sentences
 
