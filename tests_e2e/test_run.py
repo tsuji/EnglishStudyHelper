@@ -10,8 +10,8 @@ def main():
     テスト実行のメイン関数
     """
     # 入力ファイルと出力ファイルのパス
-    input_file = 'input/text.md'
-    output_file = 'output/result.md'
+    input_file = '../input/text.md'
+    output_file = '../output/result.md'
     
     print(f"テキストファイルを分析中: {input_file}")
     
@@ -26,8 +26,9 @@ def main():
         print(f"{i}. {word.text} ({word.pos}): {word.count}回")
     
     # レポートを生成して保存
+    # generate_and_save_report(words, output_file, option='no_translation')
     generate_and_save_report(words, output_file)
-    
+
     print(f"\nレポートを保存しました: {output_file}")
     
     # 出力ファイルの先頭部分を表示

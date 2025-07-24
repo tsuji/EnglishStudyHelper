@@ -1,6 +1,7 @@
 """
 分析結果をレポートとして出力するモジュール
 """
+from email.policy import default
 from typing import List, Dict, Optional
 import textwrap
 
@@ -43,12 +44,13 @@ def generate_table_header() -> str:
     return f"{header}\n{separator}"
 
 
-def generate_report(words: List[Word]) -> str:
+def generate_report(words: List[Word], option: str) -> str:
     """
     単語リストからレポートを生成する
     
     Args:
         words (List[Word]): 単語オブジェクトのリスト
+        option (str): オプション（例: "no_translation"）
     
     Returns:
         str: レポート
@@ -63,13 +65,17 @@ def generate_report(words: List[Word]) -> str:
     for word in words:
         # 単語の日本語訳を取得
         translation = dictionary.get_word_translation(word.text, word.pos)
-        
+
+        # no_translationオプションが指定されている場合、翻訳が None の場合のみ出力
+        if option == "no_translation" and translation is not None:
+            continue
+
         # 品詞の日本語訳を取得
         pos_translation = config.get_pos_translation(word.pos)
         
         # 例文を1つ取得（最初の例文を使用）
         example = word.examples[0] if word.examples else ""
-        
+
         # 行をフォーマットして追加
         row = format_table_row(word, translation, pos_translation, example)
         report.append(row)
@@ -90,13 +96,14 @@ def save_report(report: str, output_path: str) -> None:
         f.write(report)
 
 
-def generate_and_save_report(words: List[Word], output_path: str) -> None:
+def generate_and_save_report(words: List[Word], output_path: str, option='') -> None:
     """
     レポートを生成してファイルに保存する
     
     Args:
         words (List[Word]): 単語オブジェクトのリスト
         output_path (str): 出力ファイルのパス
+        option (str): オプション（例: "no_translation"）
     """
-    report = generate_report(words)
+    report = generate_report(words, option)
     save_report(report, output_path)
