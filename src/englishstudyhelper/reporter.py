@@ -2,12 +2,12 @@
 分析結果をレポートとして出力するモジュール
 """
 from email.policy import default
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Tuple
 import textwrap
 
 from .word import Word
 from .config import get_config
-from .dictionary import get_dictionary
+from .dictionary import get_dictionary, Dictionary
 
 
 def format_table_row(word: Word, translation: Optional[str], pos_translation: str, example: str) -> str:
@@ -106,4 +106,295 @@ def generate_and_save_report(words: List[Word], output_path: str, option='') -> 
         option (str): オプション（例: "no_translation"）
     """
     report = generate_report(words, option)
+    save_report(report, output_path)
+
+
+def is_irregular_verb(word: str, dictionary: Dictionary) -> bool:
+    """
+    動詞が不規則変化かどうかを判定する
+    
+    Args:
+        word (str): 動詞
+        dictionary (Dictionary): 辞書オブジェクト
+    
+    Returns:
+        bool: 不規則変化の場合はTrue
+    """
+    # 不規則変化の動詞の辞書
+    irregular_verbs = {
+        'be', 'have', 'do', 'say', 'make', 'go', 'take', 'come', 'see', 'get',
+        'know', 'give', 'find', 'think', 'tell', 'become', 'leave', 'feel',
+        'put', 'bring', 'begin', 'keep', 'hold', 'write', 'run', 'stand',
+        'meet', 'sit', 'speak', 'let', 'set', 'send', 'pay', 'hear', 'mean',
+        'lose', 'read', 'fall', 'lead', 'understand', 'buy', 'win', 'teach',
+        'catch', 'choose', 'grow', 'wear', 'drive', 'break', 'show', 'throw',
+        'build', 'spend', 'draw', 'fly', 'sell', 'rise', 'swim', 'forget',
+        'cut', 'sing', 'hang', 'shake', 'ride', 'feed', 'beat', 'lie', 'lay',
+        'shoot', 'sleep', 'wake', 'cost', 'hit', 'hurt', 'split', 'spread',
+        'shut', 'stick', 'sting', 'strike', 'swear', 'sweep', 'swing', 'tear',
+        'bend', 'bet', 'bite', 'blow', 'burn', 'burst', 'cast', 'deal', 'dig',
+        'dream', 'drink', 'eat', 'fight', 'freeze', 'hide', 'kneel', 'lean',
+        'leap', 'lend', 'light', 'seek', 'shine', 'sink', 'slide', 'smell',
+        'spell', 'spill', 'spit', 'steal', 'weep', 'wind'
+    }
+    
+    # 動詞の原形を取得
+    base_form = dictionary._get_verb_infinitive(word)
+    
+    # 原形が不規則変化の動詞リストに含まれるかチェック
+    return base_form in irregular_verbs
+
+
+def get_verb_forms(word: str, pos: str, dictionary: Dictionary) -> Tuple[str, str, str]:
+    """
+    動詞の原形、過去形、過去分詞形を取得する
+    
+    Args:
+        word (str): 動詞
+        pos (str): 品詞タグ
+        dictionary (Dictionary): 辞書オブジェクト
+    
+    Returns:
+        Tuple[str, str, str]: (原形, 過去形, 過去分詞形)
+    """
+    # 動詞の原形を取得
+    base_form = word
+    
+    # 品詞タグに基づいて原形を取得
+    if pos in ['VBD', 'VBN']:  # 過去形または過去分詞
+        base_form = dictionary._get_verb_infinitive(word)
+    elif pos == 'VBG':  # 現在分詞/動名詞
+        base_form = dictionary._get_verb_infinitive_from_ing(word)
+    elif pos == 'VBZ':  # 三人称単数現在
+        base_form = dictionary._get_verb_infinitive_from_third_person(word)
+    
+    # 不規則変化の動詞の過去形と過去分詞形のマッピング
+    irregular_verb_forms = {
+        'be': ('was/were', 'been'),
+        'have': ('had', 'had'),
+        'do': ('did', 'done'),
+        'say': ('said', 'said'),
+        'make': ('made', 'made'),
+        'go': ('went', 'gone'),
+        'take': ('took', 'taken'),
+        'come': ('came', 'come'),
+        'see': ('saw', 'seen'),
+        'get': ('got', 'got/gotten'),
+        'know': ('knew', 'known'),
+        'give': ('gave', 'given'),
+        'find': ('found', 'found'),
+        'think': ('thought', 'thought'),
+        'tell': ('told', 'told'),
+        'become': ('became', 'become'),
+        'leave': ('left', 'left'),
+        'feel': ('felt', 'felt'),
+        'put': ('put', 'put'),
+        'bring': ('brought', 'brought'),
+        'begin': ('began', 'begun'),
+        'keep': ('kept', 'kept'),
+        'hold': ('held', 'held'),
+        'write': ('wrote', 'written'),
+        'run': ('ran', 'run'),
+        'stand': ('stood', 'stood'),
+        'meet': ('met', 'met'),
+        'sit': ('sat', 'sat'),
+        'speak': ('spoke', 'spoken'),
+        'let': ('let', 'let'),
+        'set': ('set', 'set'),
+        'send': ('sent', 'sent'),
+        'pay': ('paid', 'paid'),
+        'hear': ('heard', 'heard'),
+        'mean': ('meant', 'meant'),
+        'lose': ('lost', 'lost'),
+        'read': ('read', 'read'),
+        'fall': ('fell', 'fallen'),
+        'lead': ('led', 'led'),
+        'understand': ('understood', 'understood'),
+        'buy': ('bought', 'bought'),
+        'win': ('won', 'won'),
+        'teach': ('taught', 'taught'),
+        'catch': ('caught', 'caught'),
+        'choose': ('chose', 'chosen'),
+        'grow': ('grew', 'grown'),
+        'wear': ('wore', 'worn'),
+        'drive': ('drove', 'driven'),
+        'break': ('broke', 'broken'),
+        'show': ('showed', 'shown'),
+        'throw': ('threw', 'thrown'),
+        'build': ('built', 'built'),
+        'spend': ('spent', 'spent'),
+        'draw': ('drew', 'drawn'),
+        'fly': ('flew', 'flown'),
+        'sell': ('sold', 'sold'),
+        'rise': ('rose', 'risen'),
+        'swim': ('swam', 'swum'),
+        'forget': ('forgot', 'forgotten'),
+        'cut': ('cut', 'cut'),
+        'sing': ('sang', 'sung'),
+        'hang': ('hung', 'hung'),
+        'shake': ('shook', 'shaken'),
+        'ride': ('rode', 'ridden'),
+        'feed': ('fed', 'fed'),
+        'beat': ('beat', 'beaten'),
+        'lie': ('lay', 'lain'),
+        'lay': ('laid', 'laid'),
+        'shoot': ('shot', 'shot'),
+        'sleep': ('slept', 'slept'),
+        'wake': ('woke', 'woken'),
+        'cost': ('cost', 'cost'),
+        'hit': ('hit', 'hit'),
+        'hurt': ('hurt', 'hurt'),
+        'split': ('split', 'split'),
+        'spread': ('spread', 'spread'),
+        'shut': ('shut', 'shut'),
+        'stick': ('stuck', 'stuck'),
+        'sting': ('stung', 'stung'),
+        'strike': ('struck', 'struck'),
+        'swear': ('swore', 'sworn'),
+        'sweep': ('swept', 'swept'),
+        'swing': ('swung', 'swung'),
+        'tear': ('tore', 'torn'),
+        'bend': ('bent', 'bent'),
+        'bet': ('bet', 'bet'),
+        'bite': ('bit', 'bitten'),
+        'blow': ('blew', 'blown'),
+        'burn': ('burned/burnt', 'burned/burnt'),
+        'burst': ('burst', 'burst'),
+        'cast': ('cast', 'cast'),
+        'deal': ('dealt', 'dealt'),
+        'dig': ('dug', 'dug'),
+        'dream': ('dreamed/dreamt', 'dreamed/dreamt'),
+        'drink': ('drank', 'drunk'),
+        'eat': ('ate', 'eaten'),
+        'fight': ('fought', 'fought'),
+        'freeze': ('froze', 'frozen'),
+        'hide': ('hid', 'hidden'),
+        'kneel': ('knelt', 'knelt'),
+        'lean': ('leaned/leant', 'leaned/leant'),
+        'leap': ('leaped/leapt', 'leaped/leapt'),
+        'lend': ('lent', 'lent'),
+        'light': ('lit', 'lit'),
+        'seek': ('sought', 'sought'),
+        'shine': ('shone', 'shone'),
+        'sink': ('sank', 'sunk'),
+        'slide': ('slid', 'slid'),
+        'smell': ('smelled/smelt', 'smelled/smelt'),
+        'spell': ('spelled/spelt', 'spelled/spelt'),
+        'spill': ('spilled/spilt', 'spilled/spilt'),
+        'spit': ('spat', 'spat'),
+        'steal': ('stole', 'stolen'),
+        'weep': ('wept', 'wept'),
+        'wind': ('wound', 'wound')
+    }
+    
+    # 不規則変化の動詞の場合
+    if base_form in irregular_verb_forms:
+        past_tense, past_participle = irregular_verb_forms[base_form]
+    else:
+        # 規則変化の動詞の場合
+        if base_form.endswith('e'):
+            past_tense = base_form + 'd'
+            past_participle = base_form + 'd'
+        elif base_form.endswith('y') and base_form[-2] not in ['a', 'e', 'i', 'o', 'u']:
+            past_tense = base_form[:-1] + 'ied'
+            past_participle = base_form[:-1] + 'ied'
+        elif (len(base_form) > 1 and 
+              base_form[-1] not in ['a', 'e', 'i', 'o', 'u', 'y', 'w'] and 
+              base_form[-2] in ['a', 'e', 'i', 'o', 'u']):
+            past_tense = base_form + base_form[-1] + 'ed'
+            past_participle = base_form + base_form[-1] + 'ed'
+        else:
+            past_tense = base_form + 'ed'
+            past_participle = base_form + 'ed'
+    
+    return (base_form, past_tense, past_participle)
+
+
+def generate_verb_report_table_header() -> str:
+    """
+    動詞レポートの表のヘッダーを生成する
+    
+    Returns:
+        str: 表のヘッダー
+    """
+    header = "| 原型 | 過去形 | 過去分詞形 | 意味・説明 |"
+    separator = "|------|------|----------|----------|"
+    return f"{header}\n{separator}"
+
+
+def generate_verb_report(words: List[Word]) -> str:
+    """
+    動詞リストからレポートを生成する
+    
+    Args:
+        words (List[Word]): 単語オブジェクトのリスト
+    
+    Returns:
+        str: レポート
+    """
+    dictionary = get_dictionary()
+    
+    # 動詞のみをフィルタリング
+    verb_pos_tags = ['VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ']
+    verbs = [word for word in words if word.pos in verb_pos_tags]
+    
+    # 動詞を規則変化と不規則変化に分類
+    regular_verbs = []
+    irregular_verbs = []
+    
+    # 処理済みの動詞の原形を記録するセット
+    processed_base_forms = set()
+    
+    for verb in verbs:
+        # 動詞の原形、過去形、過去分詞形を取得
+        base_form, past_tense, past_participle = get_verb_forms(verb.text, verb.pos, dictionary)
+        
+        # 既に処理済みの原形はスキップ
+        if base_form in processed_base_forms:
+            continue
+        
+        # 処理済みとしてマーク
+        processed_base_forms.add(base_form)
+        
+        # 動詞の日本語訳を取得
+        translation = dictionary.get_word_translation(base_form, 'VB')
+        
+        # 不規則変化かどうかを判定
+        if is_irregular_verb(verb.text, dictionary):
+            irregular_verbs.append((base_form, past_tense, past_participle, translation or "未登録"))
+        else:
+            regular_verbs.append((base_form, past_tense, past_participle, translation or "未登録"))
+    
+    # レポートを生成
+    report = []
+    
+    # 不規則動詞のテーブル
+    report.append("## 不規則動詞")
+    report.append(generate_verb_report_table_header())
+    
+    for base_form, past_tense, past_participle, translation in sorted(irregular_verbs, key=lambda x: x[0]):
+        row = f"| {base_form} | {past_tense} | {past_participle} | {translation} |"
+        report.append(row)
+    
+    # 一般動詞のテーブル
+    report.append("\n## 一般動詞")
+    report.append(generate_verb_report_table_header())
+    
+    for base_form, past_tense, past_participle, translation in sorted(regular_verbs, key=lambda x: x[0]):
+        row = f"| {base_form} | {past_tense} | {past_participle} | {translation} |"
+        report.append(row)
+    
+    # レポートを文字列として結合
+    return "\n".join(report)
+
+
+def generate_and_save_verb_report(words: List[Word], output_path: str) -> None:
+    """
+    動詞レポートを生成してファイルに保存する
+    
+    Args:
+        words (List[Word]): 単語オブジェクトのリスト
+        output_path (str): 出力ファイルのパス
+    """
+    report = generate_verb_report(words)
     save_report(report, output_path)

@@ -7,7 +7,8 @@ import sys
 from typing import List, Optional
 
 from .analyzer import analyze_file
-from .reporter import generate_and_save_report
+from .config import get_config
+from .reporter import generate_and_save_report, generate_and_save_verb_report
 
 
 def parse_args() -> argparse.Namespace:
@@ -70,6 +71,13 @@ def main(args: Optional[List[str]] = None) -> int:
         generate_and_save_report(words, output_file)
 
         print(f"レポートを保存しました: {output_file}")
+        
+        # 動詞レポートを生成して保存
+        config = get_config()
+        verb_report_path = config.get_verb_report_path()
+        generate_and_save_verb_report(words, verb_report_path)
+        
+        print(f"動詞レポートを保存しました: {verb_report_path}")
 
         return 0
 

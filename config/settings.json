@@ -26,5 +26,8 @@
     },
     "dictionary": {
         "max_translations": 3
+    },
+    "output": {
+        "verb_report": "output/verb_report.md"
     }
 }

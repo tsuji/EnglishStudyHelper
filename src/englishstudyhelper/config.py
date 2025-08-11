@@ -106,6 +106,16 @@ class Config:
         """
         dictionary_settings = self.config_data.get('dictionary', {})
         return dictionary_settings.get('max_translations', 3)
+        
+    def get_verb_report_path(self) -> str:
+        """
+        動詞レポートの出力パスを取得する
+        
+        Returns:
+            str: 動詞レポートの出力パス。設定されていない場合はデフォルトのパスを返す。
+        """
+        output_settings = self.config_data.get('output', {})
+        return output_settings.get('verb_report', 'output/verb_report.md')
 
 
 # シングルトンインスタンス
