@@ -65,18 +65,12 @@ class Dictionary:
         # 翻訳が見つからない場合はNoneを返す
         if translation is None:
             return None
-        
-        # 翻訳を"/"で分割し、指定された数だけを取得
-        translations = translation.split('/')
-        
-        # max_translationsが0以下の場合は空文字列を返す
-        if max_translations <= 0:
-            return ''
-            
-        limited_translations = translations[:max_translations]
-        
-        # "/"区切りの文字列として返す
-        return ' / '.join(t.strip() for t in limited_translations)
+
+        # 100文字以上の翻訳は切り捨てる(末尾に"..."を追加)
+        if len(translation) > 100:
+            translation = translation[:100] + "..."
+
+        return translation
 
     def _query_dictionary(self, word: str) -> Optional[str]:
         """
