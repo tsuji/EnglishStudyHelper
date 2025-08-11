@@ -96,43 +96,46 @@ class TestReporter(unittest.TestCase):
         """
         レポート生成のテスト
         """
-        # レポートを生成
-        report = generate_report(self.test_words, '')
+        # レポートを生成（行リスト）
+        rows = generate_report(self.test_words, '')
         
-        # レポートが文字列であることを確認
-        self.assertIsInstance(report, str)
+        # レポートが行リストであることを確認
+        self.assertIsInstance(rows, list)
+        self.assertTrue(all(isinstance(r, str) for r in rows))
         
-        # レポートにヘッダーが含まれているか確認
-        self.assertIn("語句", report)
-        self.assertIn("出現回数", report)
+        # ヘッダーは含まれない
+        self.assertFalse(any("語句" in r for r in rows))
+        self.assertFalse(any("出現回数" in r for r in rows))
         
-        # レポートに各単語の情報が含まれているか確認
-        self.assertIn("rabbit", report)
-        self.assertIn("play", report)
-        self.assertIn("test", report)
+        # 各単語の情報が含まれているか確認
+        joined = "\n".join(rows)
+        self.assertIn("rabbit", joined)
+        self.assertIn("play", joined)
+        self.assertIn("test", joined)
         
         # 出現回数が含まれているか確認
-        self.assertIn("3", report)
-        self.assertIn("2", report)
-        self.assertIn("1", report)
+        self.assertIn("3", joined)
+        self.assertIn("2", joined)
+        self.assertIn("1", joined)
     
     def test_save_report(self):
         """
         レポート保存のテスト
         """
-        # テスト用のレポート
-        test_report = "This is a test report."
+        # テスト用の行
+        test_rows = ["| word | 1 | mean | 名詞 | ex |"]
         
-        # レポートを保存
-        save_report(test_report, self.output_path)
+        # レポートを保存（ヘッダー付与される）
+        save_report(test_rows, self.output_path)
         
         # ファイルが作成されたか確認
         self.assertTrue(os.path.exists(self.output_path))
         
-        # ファイルの内容が正しいか確認
+        # ファイルの内容が正しいか確認（ヘッダー+1行）
         with open(self.output_path, 'r', encoding='utf-8') as f:
             content = f.read()
-            self.assertEqual(content, test_report)
+            self.assertIn("語句", content)
+            self.assertIn("| word |", content)
     
     def test_generate_and_save_report(self):
         """

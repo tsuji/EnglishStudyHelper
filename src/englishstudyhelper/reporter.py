@@ -44,22 +44,21 @@ def generate_table_header() -> str:
     return f"{header}\n{separator}"
 
 
-def generate_report(words: List[Word], option: str) -> str:
+def generate_report(words: List[Word], option: str) -> List[str]:
     """
-    単語リストからレポートを生成する
+    単語リストからレポートの行（ヘッダー除く）を生成する
     
     Args:
         words (List[Word]): 単語オブジェクトのリスト
         option (str): オプション（例: "no_translation"）
     
     Returns:
-        str: レポート
+        List[str]: 表の行（ヘッダーは含まない）
     """
     config = get_config()
     dictionary = get_dictionary()
     
-    # 表のヘッダーを生成
-    report = [generate_table_header()]
+    rows: List[str] = []
     
     # 各単語の行を生成
     for word in words:
@@ -78,35 +77,37 @@ def generate_report(words: List[Word], option: str) -> str:
 
         # 行をフォーマットして追加
         row = format_table_row(word, translation, pos_translation, example)
-        report.append(row)
+        rows.append(row)
     
-    # レポートを文字列として結合
-    return "\n".join(report)
+    return rows
 
 
-def save_report(report: str, output_path: str) -> None:
+def save_report(rows: List[str], output_path: str) -> None:
     """
-    レポートをファイルに保存する
+    レポートをファイルに保存する（ヘッダー行をこのタイミングで追加）
     
     Args:
-        report (str): レポート
+        rows (List[str]): テーブルの行（ヘッダーは含まない）
         output_path (str): 出力ファイルのパス
     """
+    header = generate_table_header()
+    content = "\n".join([header] + rows)
     with open(output_path, 'w', encoding='utf-8') as f:
-        f.write(report)
+        f.write(content)
 
 
 def generate_and_save_report(words: List[Word], output_path: str, option='') -> None:
     """
-    レポートを生成してファイルに保存する
+    レポートを生成してファイルに保存する（互換用のヘルパー）。
+    現在は generate_report で行リストを作り、save_report でヘッダー付きで保存する。
     
     Args:
         words (List[Word]): 単語オブジェクトのリスト
         output_path (str): 出力ファイルのパス
         option (str): オプション（例: "no_translation"）
     """
-    report = generate_report(words, option)
-    save_report(report, output_path)
+    rows = generate_report(words, option)
+    save_report(rows, output_path)
 
 
 def is_irregular_verb(word: str, dictionary: Dictionary) -> bool:
@@ -397,4 +398,6 @@ def generate_and_save_verb_report(words: List[Word], output_path: str) -> None:
         output_path (str): 出力ファイルのパス
     """
     report = generate_verb_report(words)
-    save_report(report, output_path)
+    # 動詞レポートは独自形式（既にヘッダー等含む文字列）のため、そのまま保存する
+    with open(output_path, 'w', encoding='utf-8') as f:
+        f.write(report)

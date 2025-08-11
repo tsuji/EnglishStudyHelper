@@ -8,7 +8,7 @@ from typing import List, Optional
 
 from .analyzer import analyze_file
 from .config import get_config
-from .reporter import generate_and_save_report, generate_and_save_verb_report
+from .reporter import generate_report, save_report, generate_and_save_report, generate_and_save_verb_report
 
 
 def parse_args() -> argparse.Namespace:
@@ -19,7 +19,8 @@ def parse_args() -> argparse.Namespace:
         argparse.Namespace: パースされた引数
     """
     parser = argparse.ArgumentParser(description='英語学習者向けのテキスト分析ツール')
-    parser.add_argument('input_file', help='分析対象のテキストファイル')
+    parser.add_argument('input_file', nargs='?', help='分析対象のテキストファイル')
+    parser.add_argument('-i', '--input-dir', help='分析対象のテキストファイルのディレクトリ (*.md を処理)')
     parser.add_argument('-o', '--output', help='出力ファイルのパス (デフォルト: output.md)')
     parser.add_argument('-c', '--config', help='設定ファイルのパス')
 
@@ -40,8 +41,9 @@ def main(args: Optional[List[str]] = None) -> int:
     # コマンドライン引数をパース
     parsed_args = parse_args() if args is None else parse_args(args)
 
-    # 入力ファイルのパスを取得
+    # 入力ファイル/ディレクトリのパスを取得
     input_file = parsed_args.input_file
+    input_dir = parsed_args.input_dir
 
     # 出力ファイルのパスを取得（指定されていない場合はデフォルト値を使用）
     output_file = parsed_args.output or 'output.md'
@@ -50,32 +52,49 @@ def main(args: Optional[List[str]] = None) -> int:
     config_path = parsed_args.config
 
     try:
-        # 入力ファイルが存在するか確認
-        if not os.path.exists(input_file):
-            print(f"エラー: 入力ファイルが見つかりません: {input_file}", file=sys.stderr)
-            return 1
-
         # 設定ファイルが指定されている場合、存在するか確認
         if config_path and not os.path.exists(config_path):
             print(f"エラー: 設定ファイルが見つかりません: {config_path}", file=sys.stderr)
             return 1
 
-        print(f"テキストファイルを分析中: {input_file}")
+        aggregated_rows: List[str] = []
+        aggregated_words = []
 
-        # テキストファイルを分析
-        words = analyze_file(input_file)
+        if input_dir:
+            if not os.path.isdir(input_dir):
+                print(f"エラー: 入力ディレクトリが見つかりません: {input_dir}", file=sys.stderr)
+                return 1
+            # ディレクトリ内の .md ファイルを処理
+            md_files = [os.path.join(input_dir, f) for f in os.listdir(input_dir) if f.lower().endswith('.md')]
+            if not md_files:
+                print(f"エラー: 指定ディレクトリに .md ファイルが見つかりません: {input_dir}", file=sys.stderr)
+                return 1
+            for path in sorted(md_files):
+                print(f"テキストファイルを分析中: {path}")
+                words = analyze_file(path)
+                print(f"分析結果: {len(words)} 個の単語が見つかりました ({os.path.basename(path)})")
+                aggregated_words.extend(words)
+                rows = generate_report(words, '')
+                aggregated_rows.extend(rows)
+        else:
+            # 単一ファイルモード
+            if not input_file or not os.path.exists(input_file):
+                print(f"エラー: 入力ファイルが見つかりません: {input_file}", file=sys.stderr)
+                return 1
+            print(f"テキストファイルを分析中: {input_file}")
+            words = analyze_file(input_file)
+            print(f"分析結果: {len(words)} 個の単語が見つかりました")
+            aggregated_words = words
+            aggregated_rows = generate_report(words, '')
 
-        print(f"分析結果: {len(words)} 個の単語が見つかりました")
-
-        # レポートを生成して保存
-        generate_and_save_report(words, output_file)
-
+        # 全ファイル処理後にレポートを保存
+        save_report(aggregated_rows, output_file)
         print(f"レポートを保存しました: {output_file}")
         
-        # 動詞レポートを生成して保存
+        # 動詞レポートを生成して保存（全入力の集計に基づく）
         config = get_config()
         verb_report_path = config.get_verb_report_path()
-        generate_and_save_verb_report(words, verb_report_path)
+        generate_and_save_verb_report(aggregated_words, verb_report_path)
         
         print(f"動詞レポートを保存しました: {verb_report_path}")
 
