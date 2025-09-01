@@ -66,6 +66,20 @@ class Dictionary:
         if translation is None:
             return None
 
+        # max_translationsの処理: 0以下なら空文字、正ならその数までに整形
+        try:
+            mt = int(max_translations) if max_translations is not None else int(get_config().get_max_translations())
+        except Exception:
+            mt = get_config().get_max_translations()
+        if mt is not None:
+            if mt <= 0:
+                return ''
+            # 訳語を"/"で分割し、トリムして再結合
+            parts = [p.strip() for p in translation.split('/')]
+            # 空要素を除去
+            parts = [p for p in parts if p]
+            translation = ' / '.join(parts[:mt])
+
         # 100文字以上の翻訳は切り捨てる(末尾に"..."を追加)
         if len(translation) > 100:
             translation = translation[:100] + "..."
