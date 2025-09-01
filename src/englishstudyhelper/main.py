@@ -8,7 +8,7 @@ from typing import List, Optional
 
 from .analyzer import analyze_file
 from .config import get_config
-from .reporter import generate_report, save_report, generate_and_save_report, generate_and_save_verb_report
+from .reporter import generate_full_report, save_full_report
 
 
 def parse_args() -> argparse.Namespace:
@@ -19,9 +19,10 @@ def parse_args() -> argparse.Namespace:
         argparse.Namespace: パースされた引数
     """
     parser = argparse.ArgumentParser(description='英語学習者向けのテキスト分析ツール')
-    parser.add_argument('-i', '--input-dir', required=True, help='分析対象のテキストファイルのディレクトリ (*.md を処理)')
-    parser.add_argument('-o', '--output-dir', help='出力ディレクトリ (デフォルト: output)')
+    parser.add_argument('-i', '--input', required=True, help='分析対象: ディレクトリまたは単一ファイル (.md)')
+    parser.add_argument('-o', '--output', help='出力ディレクトリ (デフォルト: output)')
     parser.add_argument('-c', '--config', help='設定ファイルのパス')
+    parser.add_argument('--option', help='オプション (例: no_translation)')
 
     return parser.parse_args()
 
@@ -40,12 +41,12 @@ def main(args: Optional[List[str]] = None) -> int:
     # コマンドライン引数をパース
     parsed_args = parse_args() if args is None else parse_args(args)
 
-    # 入力ディレクトリのパスを取得
-    input_dir = parsed_args.input_dir
+    # 入力のパスを取得（ファイルまたはディレクトリ）
+    input_path = parsed_args.input
 
-    # 出力ファイルのパスを取得（指定されていない場合はデフォルト値を使用）
-    output_dir  = parsed_args.output_dir or 'output'
-    result_file = output_dir + '/result.md'
+    # 出力ディレクトリのパスを取得（指定されていない場合はデフォルト値を使用）
+    output_dir  = parsed_args.output or 'output'
+    option = parsed_args.option or ''
 
     # 設定ファイルのパスを取得
     config_path = parsed_args.config
@@ -56,34 +57,37 @@ def main(args: Optional[List[str]] = None) -> int:
             print(f"エラー: 設定ファイルが見つかりません: {config_path}", file=sys.stderr)
             return 1
 
-        aggregated_rows: List[str] = []
-        aggregated_words = []
+        # 出力ディレクトリを作成（存在しない場合作成）
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir, exist_ok=True)
 
-        if not os.path.isdir(input_dir):
-            print(f"エラー: 入力ディレクトリが見つかりません: {input_dir}", file=sys.stderr)
-            return 1
-        # ディレクトリ内の .md ファイルを処理
-        md_files = [os.path.join(input_dir, f) for f in os.listdir(input_dir) if f.lower().endswith('.md')]
-        if not md_files:
-            print(f"エラー: 指定ディレクトリに .md ファイルが見つかりません: {input_dir}", file=sys.stderr)
-            return 1
-        for path in sorted(md_files):
+        targets: List[str] = []
+        if os.path.isdir(input_path):
+            # ディレクトリ内の .md ファイルを処理
+            md_files = [os.path.join(input_path, f) for f in os.listdir(input_path) if f.lower().endswith('.md')]
+            if not md_files:
+                print(f"エラー: 指定ディレクトリに .md ファイルが見つかりません: {input_path}", file=sys.stderr)
+                return 1
+            targets = sorted(md_files)
+        else:
+            # 単一ファイルとして処理
+            if not os.path.exists(input_path):
+                print(f"エラー: 入力ファイルが見つかりません: {input_path}", file=sys.stderr)
+                return 1
+            if not input_path.lower().endswith('.md'):
+                print(f"エラー: 入力ファイルは .md である必要があります: {input_path}", file=sys.stderr)
+                return 1
+            targets = [input_path]
+
+        # 各ファイルを独立解析し、レポートを保存
+        for path in targets:
             print(f"テキストファイルを分析中: {path}")
             words = analyze_file(path)
-            print(f"分析結果: {len(words)} 個の単語が見つかりました ({os.path.basename(path)})")
-            aggregated_words.extend(words)
-            rows = generate_report(words, '')
-            aggregated_rows.extend(rows)
-
-        # 全ファイル処理後にレポートを保存
-        save_report(aggregated_rows, result_file)
-        print(f"レポートを保存しました: {result_file}")
-        
-        # 動詞レポートを生成して保存（全入力の集計に基づく）
-        verb_report_file = output_dir + '/verb_report.md'
-        generate_and_save_verb_report(aggregated_words, verb_report_file)
-        
-        print(f"動詞レポートを保存しました: {verb_report_file}")
+            title = os.path.splitext(os.path.basename(path))[0]
+            lines = generate_full_report(words, title, option)
+            output_path = os.path.join(output_dir, f"{title}_report.md")
+            save_full_report(lines, output_path)
+            print(f"レポートを保存しました: {output_path}")
 
         return 0
 

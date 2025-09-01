@@ -407,3 +407,49 @@ def generate_and_save_verb_report(words: List[Word], output_path: str) -> None:
     """
     irregular_rows, regular_rows = generate_verb_report(words)
     save_verb_report(irregular_rows, regular_rows, output_path)
+
+
+def generate_full_report(words: List[Word], title: str, option: str = '') -> List[str]:
+    """
+    1つのファイル分の統合レポート本文を生成する（見出し含む行リスト）
+    
+    構成:
+      # {title}
+      
+      ## 出現単語表
+      <table header>
+      <rows>
+      
+      ## 動詞一覧
+      ### 不規則動詞
+      <verb table header>
+      <irregular rows>
+      
+      ### 一般動詞
+      <verb table header>
+      <regular rows>
+    """
+    rows = generate_report(words, option)
+    irregular_rows, regular_rows = generate_verb_report(words)
+    parts: List[str] = []
+    parts.append(f"# {title}")
+    parts.append("")
+    parts.append("## 出現単語表")
+    parts.append(generate_table_header())
+    parts.extend(rows)
+    parts.append("")
+    parts.append("## 動詞一覧")
+    parts.append("### 不規則動詞")
+    parts.append(generate_verb_report_table_header())
+    parts.extend(irregular_rows)
+    parts.append("")
+    parts.append("### 一般動詞")
+    parts.append(generate_verb_report_table_header())
+    parts.extend(regular_rows)
+    return parts
+
+
+def save_full_report(lines: List[str], output_path: str) -> None:
+    content = "\n".join(lines)
+    with open(output_path, 'w', encoding='utf-8') as f:
+        f.write(content)
