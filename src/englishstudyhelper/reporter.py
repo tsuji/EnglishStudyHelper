@@ -323,15 +323,15 @@ def generate_verb_report_table_header() -> str:
     return f"{header}\n{separator}"
 
 
-def generate_verb_report(words: List[Word]) -> str:
+def generate_verb_report(words: List[Word]) -> Tuple[List[str], List[str]]:
     """
-    動詞リストからレポートを生成する
+    動詞リストからレポートの各行（ヘッダー除く）を生成する
     
     Args:
         words (List[Word]): 単語オブジェクトのリスト
     
     Returns:
-        str: レポート
+        Tuple[List[str], List[str]]: (不規則動詞の行リスト, 規則動詞の行リスト)
     """
     dictionary = get_dictionary()
     
@@ -339,9 +339,9 @@ def generate_verb_report(words: List[Word]) -> str:
     verb_pos_tags = ['VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ']
     verbs = [word for word in words if word.pos in verb_pos_tags]
     
-    # 動詞を規則変化と不規則変化に分類
-    regular_verbs = []
-    irregular_verbs = []
+    # 動詞を規則変化と不規則変化に分類（行として格納）
+    irregular_rows: List[str] = []
+    regular_rows: List[str] = []
     
     # 処理済みの動詞の原形を記録するセット
     processed_base_forms = set()
@@ -358,35 +358,43 @@ def generate_verb_report(words: List[Word]) -> str:
         processed_base_forms.add(base_form)
         
         # 動詞の日本語訳を取得
-        translation = dictionary.get_word_translation(base_form, 'VB')
+        translation = dictionary.get_word_translation(base_form, 'VB') or "未登録"
+        
+        row = f"| {base_form} | {past_tense} | {past_participle} | {translation} |"
         
         # 不規則変化かどうかを判定
         if is_irregular_verb(verb.text, dictionary):
-            irregular_verbs.append((base_form, past_tense, past_participle, translation or "未登録"))
+            irregular_rows.append(row)
         else:
-            regular_verbs.append((base_form, past_tense, past_participle, translation or "未登録"))
+            regular_rows.append(row)
     
-    # レポートを生成
-    report = []
+    # アルファベット順に整列
+    irregular_rows = sorted(irregular_rows)
+    regular_rows = sorted(regular_rows)
     
-    # 不規則動詞のテーブル
-    report.append("## 不規則動詞")
-    report.append(generate_verb_report_table_header())
+    return irregular_rows, regular_rows
+
+
+def save_verb_report(irregular_rows: List[str], regular_rows: List[str], output_path: str) -> None:
+    """
+    動詞レポートをファイルに保存する（見出しとテーブルヘッダーはこのタイミングで付与）
     
-    for base_form, past_tense, past_participle, translation in sorted(irregular_verbs, key=lambda x: x[0]):
-        row = f"| {base_form} | {past_tense} | {past_participle} | {translation} |"
-        report.append(row)
-    
-    # 一般動詞のテーブル
-    report.append("\n## 一般動詞")
-    report.append(generate_verb_report_table_header())
-    
-    for base_form, past_tense, past_participle, translation in sorted(regular_verbs, key=lambda x: x[0]):
-        row = f"| {base_form} | {past_tense} | {past_participle} | {translation} |"
-        report.append(row)
-    
-    # レポートを文字列として結合
-    return "\n".join(report)
+    Args:
+        irregular_rows (List[str]): 不規則動詞の行
+        regular_rows (List[str]): 規則動詞の行
+        output_path (str): 出力ファイルのパス
+    """
+    parts: List[str] = []
+    parts.append("## 不規則動詞")
+    parts.append(generate_verb_report_table_header())
+    parts.extend(irregular_rows)
+    parts.append("")
+    parts.append("## 一般動詞")
+    parts.append(generate_verb_report_table_header())
+    parts.extend(regular_rows)
+    content = "\n".join(parts)
+    with open(output_path, 'w', encoding='utf-8') as f:
+        f.write(content)
 
 
 def generate_and_save_verb_report(words: List[Word], output_path: str) -> None:
@@ -397,7 +405,5 @@ def generate_and_save_verb_report(words: List[Word], output_path: str) -> None:
         words (List[Word]): 単語オブジェクトのリスト
         output_path (str): 出力ファイルのパス
     """
-    report = generate_verb_report(words)
-    # 動詞レポートは独自形式（既にヘッダー等含む文字列）のため、そのまま保存する
-    with open(output_path, 'w', encoding='utf-8') as f:
-        f.write(report)
+    irregular_rows, regular_rows = generate_verb_report(words)
+    save_verb_report(irregular_rows, regular_rows, output_path)

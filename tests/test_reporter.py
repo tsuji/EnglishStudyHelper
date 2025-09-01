@@ -16,6 +16,7 @@ from src.englishstudyhelper.reporter import (
     get_verb_forms,
     generate_verb_report_table_header,
     generate_verb_report,
+    save_verb_report,
     generate_and_save_verb_report
 )
 from src.englishstudyhelper.dictionary import Dictionary
@@ -237,7 +238,7 @@ class TestReporter(unittest.TestCase):
     @patch('src.englishstudyhelper.reporter.get_dictionary')
     def test_generate_verb_report(self, mock_get_dictionary):
         """
-        動詞レポート生成テスト
+        動詞レポート生成テスト（行リスト、ヘッダー除く）
         """
         # テスト用の辞書オブジェクトをモック
         mock_dict = MagicMock(spec=Dictionary)
@@ -266,32 +267,38 @@ class TestReporter(unittest.TestCase):
             with patch('src.englishstudyhelper.reporter.is_irregular_verb') as mock_is_irregular:
                 mock_is_irregular.side_effect = [False, True, True]
                 
-                # レポートを生成
-                report = generate_verb_report(test_verbs)
+                # レポート（行リスト）を生成
+                irregular_rows, regular_rows = generate_verb_report(test_verbs)
                 
-                # レポートが文字列であることを確認
-                self.assertIsInstance(report, str)
+                # 返り値型の確認
+                self.assertIsInstance(irregular_rows, list)
+                self.assertIsInstance(regular_rows, list)
+                self.assertTrue(all(isinstance(r, str) for r in irregular_rows))
+                self.assertTrue(all(isinstance(r, str) for r in regular_rows))
                 
-                # レポートに必要な見出しが含まれているか確認
-                self.assertIn("## 不規則動詞", report)
-                self.assertIn("## 一般動詞", report)
+                # ヘッダーや見出しは含まれない
+                all_rows_text = "\n".join(irregular_rows + regular_rows)
+                self.assertNotIn("## 不規則動詞", all_rows_text)
+                self.assertNotIn("## 一般動詞", all_rows_text)
+                self.assertNotIn("原型", all_rows_text)
                 
-                # レポートに各動詞の情報が含まれているか確認
-                self.assertIn("play", report)
-                self.assertIn("go", report)
-                self.assertIn("run", report)
-                self.assertIn("played", report)
-                self.assertIn("went", report)
-                self.assertIn("ran", report)
+                # 各動詞の情報が行に含まれる
+                self.assertIn("play", all_rows_text)
+                self.assertIn("go", all_rows_text)
+                self.assertIn("run", all_rows_text)
+                self.assertIn("played", all_rows_text)
+                self.assertIn("went", all_rows_text)
+                self.assertIn("ran", all_rows_text)
     
     @patch('src.englishstudyhelper.reporter.generate_verb_report')
     def test_generate_and_save_verb_report(self, mock_generate_verb_report):
         """
         動詞レポート生成と保存の統合テスト
         """
-        # テスト用のレポート
-        test_report = "This is a test verb report."
-        mock_generate_verb_report.return_value = test_report
+        # テスト用の行（不規則/規則）
+        irregular_rows = ["| go | went | gone | 行く |"]
+        regular_rows = ["| play | played | played | 遊ぶ |"]
+        mock_generate_verb_report.return_value = (irregular_rows, regular_rows)
         
         # 動詞レポートの出力パス
         verb_report_path = os.path.join(self.temp_dir.name, 'test_verb_report.md')
@@ -302,10 +309,14 @@ class TestReporter(unittest.TestCase):
         # ファイルが作成されたか確認
         self.assertTrue(os.path.exists(verb_report_path))
         
-        # ファイルの内容を確認
+        # ファイルの内容を確認（ヘッダーと見出しが付与され、両方の行が含まれる）
         with open(verb_report_path, 'r', encoding='utf-8') as f:
             content = f.read()
-            self.assertEqual(content, test_report)
+            self.assertIn("## 不規則動詞", content)
+            self.assertIn("## 一般動詞", content)
+            self.assertIn("原型", content)
+            self.assertIn("| go | went | gone | 行く |", content)
+            self.assertIn("| play | played | played | 遊ぶ |", content)
 
 
 if __name__ == '__main__':
