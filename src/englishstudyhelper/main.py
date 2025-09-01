@@ -20,7 +20,7 @@ def parse_args() -> argparse.Namespace:
     """
     parser = argparse.ArgumentParser(description='英語学習者向けのテキスト分析ツール')
     parser.add_argument('-i', '--input-dir', required=True, help='分析対象のテキストファイルのディレクトリ (*.md を処理)')
-    parser.add_argument('-o', '--output', help='出力ファイルのパス (デフォルト: output.md)')
+    parser.add_argument('-o', '--output-dir', help='出力ディレクトリ (デフォルト: output)')
     parser.add_argument('-c', '--config', help='設定ファイルのパス')
 
     return parser.parse_args()
@@ -44,7 +44,8 @@ def main(args: Optional[List[str]] = None) -> int:
     input_dir = parsed_args.input_dir
 
     # 出力ファイルのパスを取得（指定されていない場合はデフォルト値を使用）
-    output_file = parsed_args.output or 'output.md'
+    output_dir  = parsed_args.output_dir or 'output'
+    result_file = output_dir + '/result.md'
 
     # 設定ファイルのパスを取得
     config_path = parsed_args.config
@@ -75,15 +76,15 @@ def main(args: Optional[List[str]] = None) -> int:
             aggregated_rows.extend(rows)
 
         # 全ファイル処理後にレポートを保存
-        save_report(aggregated_rows, output_file)
-        print(f"レポートを保存しました: {output_file}")
+        save_report(aggregated_rows, result_file)
+        print(f"レポートを保存しました: {result_file}")
         
         # 動詞レポートを生成して保存（全入力の集計に基づく）
         config = get_config()
-        verb_report_path = config.get_verb_report_path()
-        generate_and_save_verb_report(aggregated_words, verb_report_path)
+        verb_report_file = output_dir + '/verb_report.md'
+        generate_and_save_verb_report(aggregated_words, verb_report_file)
         
-        print(f"動詞レポートを保存しました: {verb_report_path}")
+        print(f"動詞レポートを保存しました: {verb_report_file}")
 
         return 0
 
