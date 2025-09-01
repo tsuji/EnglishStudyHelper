@@ -453,3 +453,90 @@ def save_full_report(lines: List[str], output_path: str) -> None:
     content = "\n".join(lines)
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write(content)
+
+from typing import Any
+
+def escape_md_cell(s: str) -> str:
+    """
+    Markdown テーブル用セルのエスケープ。
+    '|' を '\|' に、連続改行は '<br>' に。
+    None は '' 扱い。
+    """
+    if s is None:
+        return ""
+    # Ensure string
+    s = str(s)
+    # Normalize newlines to <br>
+    s = s.replace("\r\n", "\n").replace("\r", "\n")
+    # Collapse multiple newlines to single <br> between content
+    s = s.replace("\n\n", "\n").replace("\n", "<br>")
+    # Escape pipes
+    s = s.replace("|", "\\|")
+    return s
+
+
+def format_grammar_points_table(items: List[Dict[str, Any]]) -> List[str]:
+    """
+    文法・構文ポイントの JSON 配列を Markdown テーブル行（文字列リスト）に整形して返す。
+    先頭にヘッダ行を含める。
+    並びは 'no' 数値昇順。
+    """
+    lines: List[str] = []
+    lines.append("## 文法・構文のポイント解説")
+    lines.append("")
+    lines.append("| No | 例文 (英) | 構文・文法タイトル | 形 (form) | 解説 (要点) | 日本語訳 |")
+    lines.append("|---:|---|---|---|---|---|")
+
+    def _key(x):
+        try:
+            return int(str(x.get("no", "0")).strip())
+        except Exception:
+            return 0
+
+    for it in sorted(items, key=_key):
+        no = escape_md_cell(str(it.get("no", "")).strip())
+        eng = escape_md_cell(str(it.get("eng", "")).strip())
+        ttl = escape_md_cell(str(it.get("title", "")).strip())
+        frm = escape_md_cell(str(it.get("form", "")).strip())
+        expv = it.get("exp", [])
+        if isinstance(expv, list):
+            exp_join = "<br>".join("・" + escape_md_cell(str(e).strip()) for e in expv if str(e).strip())
+        else:
+            exp_join = escape_md_cell(str(expv or "").strip())
+        jpn = escape_md_cell(str(it.get("jpn", "")).strip())
+        lines.append(f"| {no} | {eng} | {ttl} | {frm} | {exp_join} | {jpn} |")
+
+    return lines
+
+
+def generate_full_report_with_grammar(
+    words: List['Word'],
+    title: str,
+    option: str,
+    grammar_points: Optional[List[Dict[str, Any]]]
+) -> List[str]:
+    """
+    既存の「出現単語表」「動詞一覧」に加えて、
+    grammar_points があれば「文法・構文のポイント解説」セクションを末尾に追加して返す。
+    """
+    rows = generate_report(words, option)
+    irregular_rows, regular_rows = generate_verb_report(words)
+    parts: List[str] = []
+    parts.append(f"# {title}")
+    parts.append("")
+    parts.append("## 出現単語表")
+    parts.append(generate_table_header())
+    parts.extend(rows)
+    parts.append("")
+    parts.append("## 動詞一覧")
+    parts.append("### 不規則動詞")
+    parts.append(generate_verb_report_table_header())
+    parts.extend(irregular_rows)
+    parts.append("")
+    parts.append("### 一般動詞")
+    parts.append(generate_verb_report_table_header())
+    parts.extend(regular_rows)
+    if grammar_points:
+        parts.append("")
+        parts.extend(format_grammar_points_table(grammar_points))
+    return parts

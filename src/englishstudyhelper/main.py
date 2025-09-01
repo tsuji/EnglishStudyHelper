@@ -4,11 +4,17 @@
 import argparse
 import os
 import sys
+# noqa: kept for backward compatibility imports above
 from typing import List, Optional
 
 from .analyzer import analyze_file
 from .config import get_config
-from .reporter import generate_full_report, save_full_report
+from pathlib import Path
+import json
+import logging
+from typing import List, Optional, Dict, Any
+
+from .reporter import generate_full_report, save_full_report, generate_full_report_with_grammar
 
 
 def parse_args() -> argparse.Namespace:
@@ -25,6 +31,28 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--option', help='オプション (例: no_translation)')
 
     return parser.parse_args()
+
+
+def load_grammar_points(json_path: Path) -> Optional[List[Dict[str, Any]]]:
+    """
+    input/<stem>.json を読み込み、配列を返す。存在しない・パース不可なら None。
+    """
+    logger = logging.getLogger(__name__)
+    if not json_path.exists():
+        logger.info(f"文法解説ファイルなし: {json_path}（スキップ）")
+        return None
+
+    try:
+        with json_path.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+        if isinstance(data, list):
+            logger.info(f"文法解説を追加しました: {json_path}（{len(data)}件）")
+            return data
+        logger.warning(f"文法解説が配列ではありません: {json_path}（スキップ）")
+        return None
+    except Exception as e:
+        logger.error(f"文法解説の読み込みに失敗: {json_path} - {e}")
+        return None
 
 
 def main(args: Optional[List[str]] = None) -> int:
@@ -79,12 +107,24 @@ def main(args: Optional[List[str]] = None) -> int:
                 return 1
             targets = [input_path]
 
+        # ロギング設定（簡易）
+        logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+        logger = logging.getLogger(__name__)
+
         # 各ファイルを独立解析し、レポートを保存
         for path in targets:
             print(f"テキストファイルを分析中: {path}")
             words = analyze_file(path)
             title = os.path.splitext(os.path.basename(path))[0]
-            lines = generate_full_report(words, title, option)
+
+            # stem と JSON パス
+            input_dir = Path(os.path.dirname(path))
+            stem = title
+            json_path = input_dir / f"{stem}.json"
+            grammar_points = load_grammar_points(json_path)
+
+            # 新しい生成関数で統合
+            lines = generate_full_report_with_grammar(words, title, option, grammar_points)
             output_path = os.path.join(output_dir, f"{title}_report.md")
             save_full_report(lines, output_path)
             print(f"レポートを保存しました: {output_path}")
