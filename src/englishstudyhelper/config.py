@@ -99,6 +99,10 @@ class Config:
         if word.lower() in self.get_be_verbs():
             return True
 
+        # 否定敬称略のパースミスの場合
+        if word in ["wasn", "isn", "doesn", "didn", "haven", "hadn", "won", "wouldn", "couldn", "shouldn", "mightn",
+                    "mustn"]:
+            return True
 
         return False
 
