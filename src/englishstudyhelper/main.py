@@ -2,19 +2,20 @@
 英語学習ヘルパーのメインモジュール
 """
 import argparse
-import os
-import sys
-# noqa: kept for backward compatibility imports above
-from typing import List, Optional
-
-from .analyzer import analyze_file
-from .config import get_config
-from pathlib import Path
 import json
 import logging
+import os
+import sys
+import traceback
+from pathlib import Path
+from traceback import print_stack
 from typing import List, Optional, Dict, Any
 
-from .reporter import generate_full_report, save_full_report, generate_full_report_with_grammar
+from .analyzer import analyze_file
+from .reporter import generate_full_report_with_grammar, save_full_report
+
+
+# noqa: kept for backward compatibility imports above
 
 
 def parse_args() -> argparse.Namespace:
@@ -73,7 +74,7 @@ def main(args: Optional[List[str]] = None) -> int:
     input_path = parsed_args.input
 
     # 出力ディレクトリのパスを取得（指定されていない場合はデフォルト値を使用）
-    output_dir  = parsed_args.output or 'output'
+    output_dir = parsed_args.output or 'output'
     option = parsed_args.option or ''
 
     # 設定ファイルのパスを取得
@@ -133,6 +134,7 @@ def main(args: Optional[List[str]] = None) -> int:
 
     except Exception as e:
         print(f"エラー: {e}", file=sys.stderr)
+        traceback.print_exc()
         return 1
 
 
