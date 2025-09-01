@@ -197,6 +197,16 @@ def sort_words_by_count(word_dict: Dict[str, Word]) -> List[Word]:
     """
     return sorted(word_dict.values(), key=lambda w: w.count, reverse=True)
 
+def sort_words_by_dict(word_dict: Dict[str, Word]) -> List[Word]:
+    """
+    単語を辞書順にソートする
+
+    Args:
+        word_dict (Dict[str, Word]): 単語オブジェクトの辞書
+    Returns:
+        List[Word]: 辞書順にソートされた単語オブジェクトのリスト
+    """
+    return sorted(word_dict.values(), key=lambda w: w.text)
 
 def analyze_file(file_path: str) -> List[Word]:
     """
@@ -217,7 +227,7 @@ def analyze_file(file_path: str) -> List[Word]:
     # 単語をフィルタリング
     filtered_dict = filter_words(word_dict)
 
-    # 単語を出現回数順にソート
-    sorted_words = sort_words_by_count(filtered_dict)
+    # 単語を辞書順にソート
+    sorted_words = sort_words_by_dict(filtered_dict)
 
     return sorted_words

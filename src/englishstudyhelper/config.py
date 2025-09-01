@@ -87,6 +87,10 @@ class Config:
         Returns:
             bool: 除外すべき場合は True
         """
+        # 単語が2文字以下の場合
+        if len(word) <= 2:
+            return True
+
         # 品詞が除外リストに含まれる場合
         if pos in self.get_exclude_pos():
             return True
@@ -94,6 +98,7 @@ class Config:
         # be動詞の場合
         if word.lower() in self.get_be_verbs():
             return True
+
 
         return False
 
