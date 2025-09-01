@@ -3,14 +3,14 @@
 """
 import json
 import os
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any
 
 
 class Config:
     """
     設定ファイルを読み込み、アクセスするためのクラス
     """
-    
+
     def __init__(self, config_path: str = None):
         """
         コンフィグを初期化する
@@ -22,10 +22,10 @@ class Config:
             # デフォルトのパスを使用
             base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
             config_path = os.path.join(base_dir, 'config', 'settings.json')
-        
+
         self.config_path = config_path
         self.config_data = self._load_config()
-    
+
     def _load_config(self) -> Dict[str, Any]:
         """
         設定ファイルを読み込む
@@ -44,7 +44,7 @@ class Config:
             raise FileNotFoundError(f"設定ファイルが見つかりません: {self.config_path}")
         except json.JSONDecodeError as e:
             raise json.JSONDecodeError(f"設定ファイルのJSONが不正です: {e.msg}", e.doc, e.pos)
-    
+
     def get_exclude_pos(self) -> List[str]:
         """
         除外する品詞タグのリストを取得する
@@ -53,7 +53,7 @@ class Config:
             List[str]: 除外する品詞タグのリスト
         """
         return self.config_data.get('exclude_pos', [])
-    
+
     def get_be_verbs(self) -> List[str]:
         """
         be動詞のリストを取得する
@@ -62,7 +62,7 @@ class Config:
             List[str]: be動詞のリスト
         """
         return self.config_data.get('be_verbs', [])
-    
+
     def get_pos_translation(self, pos: str) -> str:
         """
         品詞タグの日本語訳を取得する
@@ -75,7 +75,7 @@ class Config:
         """
         pos_translations = self.config_data.get('pos_translations', {})
         return pos_translations.get(pos, pos)
-    
+
     def should_exclude_word(self, word: str, pos: str) -> bool:
         """
         単語を除外すべきかどうかを判定する
@@ -90,13 +90,13 @@ class Config:
         # 品詞が除外リストに含まれる場合
         if pos in self.get_exclude_pos():
             return True
-        
+
         # be動詞の場合
         if word.lower() in self.get_be_verbs():
             return True
-        
+
         return False
-        
+
     def get_max_translations(self) -> int:
         """
         返す訳語の最大数を取得する
@@ -106,16 +106,6 @@ class Config:
         """
         dictionary_settings = self.config_data.get('dictionary', {})
         return dictionary_settings.get('max_translations', 3)
-        
-    def get_verb_report_path(self) -> str:
-        """
-        動詞レポートの出力パスを取得する
-        
-        Returns:
-            str: 動詞レポートの出力パス。設定されていない場合はデフォルトのパスを返す。
-        """
-        output_settings = self.config_data.get('output', {})
-        return output_settings.get('verb_report', 'output/verb_report.md')
 
 
 # シングルトンインスタンス

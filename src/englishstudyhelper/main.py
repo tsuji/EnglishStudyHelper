@@ -80,7 +80,6 @@ def main(args: Optional[List[str]] = None) -> int:
         print(f"レポートを保存しました: {result_file}")
         
         # 動詞レポートを生成して保存（全入力の集計に基づく）
-        config = get_config()
         verb_report_file = output_dir + '/verb_report.md'
         generate_and_save_verb_report(aggregated_words, verb_report_file)
         
