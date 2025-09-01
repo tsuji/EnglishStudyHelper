@@ -2,16 +2,20 @@
 英語学習ヘルパーのテスト実行スクリプト
 """
 import os
-from src.englishstudyhelper.analyzer import analyze_file
-from src.englishstudyhelper.reporter import generate_and_save_report
+from pathlib import Path
 
-def main():
+from src.englishstudyhelper.analyzer import analyze_file
+from src.englishstudyhelper.main import load_grammar_points
+from src.englishstudyhelper.reporter import generate_and_save_report, generate_full_report_with_grammar
+
+
+def test_analyze_file():
     """
     テスト実行のメイン関数
     """
     # 入力ファイルと出力ファイルのパス
-    input_file = '../input/text.md'
-    output_file = '../output/result.md'
+    input_file = 'input/text.md'
+    output_file = 'output/text_report.md'
     
     print(f"テキストファイルを分析中: {input_file}")
     
@@ -26,21 +30,17 @@ def main():
         print(f"{i}. {word.text} ({word.pos}): {word.count}回")
     
     # レポートを生成して保存
-    # generate_and_save_report(words, output_file, option='no_translation')
-    generate_and_save_report(words, output_file)
+    title = 'text'
+    json_path = 'input/text.json'
+    option = None
+    grammar_points = load_grammar_points(Path(json_path))
+    lines = generate_full_report_with_grammar(words, title, option, grammar_points)
 
-    print(f"\nレポートを保存しました: {output_file}")
-    
+
     # 出力ファイルの先頭部分を表示
-    if os.path.exists(output_file):
-        with open(output_file, 'r', encoding='utf-8') as f:
-            content = f.read(500)  # 最初の500文字を読み込む
-            print("\nレポート内容のプレビュー:")
-            print("-" * 80)
-            print(content)
-            print("-" * 80)
-    
-    return 0
+    for line in lines[:10]:
+        print(line)
+
 
 if __name__ == '__main__':
-    main()
+    test_analyze_file()
