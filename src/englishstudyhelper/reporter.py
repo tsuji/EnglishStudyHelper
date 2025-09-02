@@ -223,15 +223,12 @@ def escape_md_cell(s: str) -> str:
 
 def format_grammar_points_table(items: List[Dict[str, Any]]) -> List[str]:
     """
-    文法・構文ポイントの JSON 配列を Markdown テーブル行（文字列リスト）に整形して返す。
-    先頭にヘッダ行を含める。
+    文法・構文ポイントの JSON 配列を Markdown リスト形式で整形して返す。
     並びは 'no' 数値昇順。
     """
     lines: List[str] = []
     lines.append("## 文法・構文のポイント解説")
     lines.append("")
-    lines.append("| No | 例文 (英) | 構文・文法タイトル | 形 (form) | 解説 (要点) | 日本語訳 |")
-    lines.append("|---:|---|---|---|---|---|")
 
     def _key(x):
         try:
@@ -240,18 +237,30 @@ def format_grammar_points_table(items: List[Dict[str, Any]]) -> List[str]:
             return 0
 
     for it in sorted(items, key=_key):
-        no = escape_md_cell(str(it.get("no", "")).strip())
-        eng = escape_md_cell(str(it.get("eng", "")).strip())
-        ttl = escape_md_cell(str(it.get("title", "")).strip())
-        frm = escape_md_cell(str(it.get("form", "")).strip())
-        expv = it.get("exp", [])
-        if isinstance(expv, list):
-            exp_join = "<br>".join("・" + escape_md_cell(str(e).strip()) for e in expv if str(e).strip())
-        else:
-            exp_join = escape_md_cell(str(expv or "").strip())
-        jpn = escape_md_cell(str(it.get("jpn", "")).strip())
-        lines.append(f"| {no} | {eng} | {ttl} | {frm} | {exp_join} | {jpn} |")
+        no = str(it.get("no", "")).strip()
+        title = str(it.get("title", "")).strip()
+        form = str(it.get("form", "")).strip()
+        eng = str(it.get("eng", "")).strip()
+        jpn = str(it.get("jpn", "")).strip()
+        exp_list = it.get("exp", [])
 
+        # 英語例文
+        lines.append(f"{no}. **\"{eng}\"**")
+        # メインタイトル
+        lines.append(f"    - {title}")
+        # 形式
+        lines.append(f"    - {form}")
+
+        # 解説項目
+        if isinstance(exp_list, list) and exp_list:
+            for exp_item in exp_list:
+                exp_text = str(exp_item).strip()
+                if exp_text:
+                    lines.append(f"      - {exp_text}")
+        # 日本語訳
+        if jpn:
+            lines.append(f"    - 『{jpn}』")
+        lines.append("")  # 項目間の空行
     return lines
 
 
