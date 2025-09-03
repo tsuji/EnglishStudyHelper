@@ -7,6 +7,7 @@ from typing import Dict, List, Tuple
 
 import nltk
 
+from . import dictionary, word
 from .config import get_config
 from .word import Word
 
@@ -153,7 +154,9 @@ def analyze_text(text: str) -> Dict[str, Word]:
 
             # 辞書に単語を追加または更新
             if word_key not in word_dict:
-                word_dict[word_key] = Word(text=token.lower(), pos=pos)
+                word = token.lower()
+                org = dictionary.get_dictionary().get_word_base_form(word, pos)
+                word_dict[word_key] = Word(text=word, org=org, pos=pos)
 
             # 出現回数をインクリメント
             word_dict[word_key].increment_count()

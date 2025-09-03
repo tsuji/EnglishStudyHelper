@@ -59,10 +59,20 @@ def generate_report(words: List[Word], option: str) -> List[str]:
 
     rows: List[str] = []
 
+    # 既出の単語を記録するセット
+    seen_words = set()
+
     # 各単語の行を生成
     for word in words:
+        # 単語の原型を取得
+        word.org = dictionary.get_word_base_form(word.text, word.pos)
+
+        # 既に処理済みの単語はスキップ
+        if word.org in seen_words:
+            continue
+
         # 単語の日本語訳を取得
-        translation = dictionary.get_word_translation(word.text, word.pos)
+        translation = dictionary.get_word_translation(word.org)
 
         # no_translationオプションが指定されている場合、翻訳が None の場合のみ出力
         if option == "no_translation" and translation is not None:
@@ -77,6 +87,7 @@ def generate_report(words: List[Word], option: str) -> List[str]:
         # 行をフォーマットして追加
         row = format_table_row(word, translation, pos_translation, example)
         rows.append(row)
+        seen_words.add(word.org)
 
     return rows
 

@@ -37,14 +37,12 @@ class Dictionary:
         # Inflectorの初期化
         self.inflector = Inflector('src/english_inflections/english_inflections.tsv')
 
-    def get_word_translation(self, word: str, part_of_speech: str = None, max_translations: int = None) -> Optional[
-        str]:
+    def get_word_translation(self, word: str, max_translations: int = None) -> Optional[str]:
         """
         単語の日本語訳を取得する
 
         Args:
-            word (str): 単語
-            part_of_speech (str, optional): 品詞。指定すると原型推測に使用される。
+            word (str): 単語の原型
             max_translations (int, optional): 返す訳語の最大数。指定しない場合は設定ファイルの値を使用する。
 
         Returns:
@@ -54,23 +52,9 @@ class Dictionary:
         # max_translationsが指定されていない場合は設定ファイルから取得
         if max_translations is None:
             max_translations = get_config().get_max_translations()
-        # 単語を小文字に変換
-        word = word.lower()
-
-        # 原型を推測
-        searched = self.inflector.Search(word)
-        if searched and searched[0][0]:
-            base_form = searched[0][0]
-        else:
-            print("Inflector failed for word: " + word + ", part_of_speech: " + str(part_of_speech))
-            base_form = word
 
         # 辞書DBから翻訳を取得
-        translation = self._query_dictionary(base_form)
-
-        # 翻訳が見つからない場合は元の単語で再検索
-        if translation is None and base_form != word:
-            translation = self._query_dictionary(word)
+        translation = self._query_dictionary(word)
 
         # 翻訳が見つからない場合はNoneを返す
         if translation is None:
@@ -164,6 +148,20 @@ class Dictionary:
             sqlite3.Error: データベース接続に失敗した場合
         """
         return sqlite3.connect(self.db_path)
+
+    def get_word_base_form(self, word, pos):
+        # 単語を小文字に変換
+        word = word.lower()
+
+        # 原型を推測
+        searched = self.inflector.Search(word)
+        if searched and searched[0][0]:
+            org = searched[0][0]
+        else:
+            print("Inflector failed for word: " + word + ", pos: " + str(pos))
+            org = word
+
+        return org
 
 
 # シングルトンインスタンス

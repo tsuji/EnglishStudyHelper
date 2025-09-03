@@ -12,11 +12,13 @@ class Word:
     
     Attributes:
         text (str): 単語のテキスト
+        org (str): 単語の原形
         pos (str): 品詞タグ (NLTKのPOSタグ)
         count (int): 出現回数
         examples (List[str]): 単語が使用されている例文のリスト
     """
     text: str
+    org: str
     pos: str
     count: int = 0
     examples: List[str] = None
