@@ -99,6 +99,32 @@ translation = dictionary.get_word_translation('running', part_of_speech='VBG')
 print(translation)  # 'run'の訳語が返される
 ```
 
+## プロジェクト構造
+
+```
+EnglishStudyHelper/
+├── config/                  # 設定ファイル
+│   └── settings.json       # デフォルト設定
+├── input/                   # 入力テキストファイル
+│   ├── text.md             # サンプルテキスト
+│   └── text.json           # 文法ポイント解説（任意）
+├── src/                     # ソースコード
+│   └── englishstudyhelper/
+│       ├── __init__.py
+│       ├── analyzer.py     # テキスト分析機能
+│       ├── config.py       # 設定ファイル読み込み
+│       ├── main.py         # メインエントリーポイント
+│       ├── reporter.py     # レポート生成機能
+│       └── word.py         # 単語クラス
+├── tests/                   # テストコード
+│   ├── test_analyzer.py
+│   ├── test_config.py
+│   ├── test_reporter.py
+│   └── test_word.py
+├── pyproject.toml          # プロジェクト設定
+└── README.md               # このファイル
+```
+
 ## 設定ファイル
 
 設定ファイル（`config/settings.json`）では以下の項目をカスタマイズできます：
@@ -204,31 +230,6 @@ print(translation)  # 'run'の訳語が返される
 | rabbit          | 5        | ウサギ                 | 名詞             | The rabbit felt soft.                                        |
 | play            | 3        | 遊ぶ、演奏する         | 動詞             | Kipper went to play with Anna.                              |
 | test            | 2        | テスト                 | 名詞             | This is a test.                                              |
-```
-
-## プロジェクト構造
-
-```
-EnglishStudyHelper/
-├── config/                  # 設定ファイル
-│   └── settings.json       # デフォルト設定
-├── input/                   # 入力テキストファイル
-│   └── text.md             # サンプルテキスト
-├── src/                     # ソースコード
-│   └── englishstudyhelper/
-│       ├── __init__.py
-│       ├── analyzer.py     # テキスト分析機能
-│       ├── config.py       # 設定ファイル読み込み
-│       ├── main.py         # メインエントリーポイント
-│       ├── reporter.py     # レポート生成機能
-│       └── word.py         # 単語クラス
-├── tests/                   # テストコード
-│   ├── test_analyzer.py
-│   ├── test_config.py
-│   ├── test_reporter.py
-│   └── test_word.py
-├── pyproject.toml          # プロジェクト設定
-└── README.md               # このファイル
 ```
 
 ## テスト実行方法
