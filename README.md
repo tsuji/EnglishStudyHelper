@@ -19,38 +19,55 @@
 ### 前提条件
 
 - Python 3.13以上
-- pipパッケージマネージャ
+- パッケージマネージャ: uv（uvw）
+  - 参考: https://docs.astral.sh/uv/
 
-### インストール手順
+### インストール手順（uv）
 
 1. リポジトリをクローン
 
 ```bash
-git clone https://github.com/yourusername/EnglishStudyHelper.git
+git clone https://github.com/tsuji/EnglishStudyHelper.git
 cd EnglishStudyHelper
 ```
 
-2. パッケージをインストール
+2. 依存関係を同期（pyproject.toml と uv.lock を使用）
 
 ```bash
-pip install -e .
+uv sync
 ```
 
-これにより、`englishstudyhelper`コマンドがシステムに追加されます。
+3. コマンドの実行（仮想環境経由）
+
+```bash
+uv run englishstudyhelper --help
+```
+
+開発用途でこのリポジトリを編集可能インストールしたい場合は、次のどちらかを利用できます：
+
+```bash
+# 開発環境を作成し、パッケージを編集可能インストール
+uv pip install -e .
+
+# もしくは uvx によりスクリプトを直接呼び出し
+uv run englishstudyhelper input/text.md
+```
+
+これらにより、`englishstudyhelper`コマンドを uv 管理の環境で利用できます。
 
 ## 使い方
 
 ### コマンドライン
 
 ```bash
-# 基本的な使い方
-englishstudyhelper input/text.md
+# 基本的な使い方（uv 経由、モジュール指定）
+uv run python -m src.englishstudyhelper.main -i input -o output
 
-# 出力ファイルを指定
-englishstudyhelper input/text.md -o output/result.md
+# 単一ファイルを指定して分析
+uv run python -m src.englishstudyhelper.main -i input/text.md -o output
 
 # 設定ファイルを指定
-englishstudyhelper input/text.md -c config/custom_settings.json
+uv run python -m src.englishstudyhelper.main -i input -o output -c config/custom_settings.json
 ```
 
 ### Pythonコードから使用
@@ -120,6 +137,65 @@ print(translation)  # 'run'の訳語が返される
 }
 ```
 
+## 入力ファイルの形式
+
+本ツールは以下の2種類の入力を扱います。いずれも同じベース名（拡張子違い）で揃えると、文法ポイントが自動で紐づきます。
+
+1. 本文テキストのMarkdownファイル（.md）
+   - 場所: input/ ディレクトリ配下
+   - 例: input/Going on a Plane.md（著作物のため内容は本READMEに転載しません）
+   - 記述ルールの目安:
+     - 通常の英文テキストを段落として記述（見出しや箇条書きが含まれても可）
+     - 句読点・改行は自由。改行で段落を分けると分析の単位が分かりやすくなります。
+   - サンプル（任意の短い例）:
+     ```markdown
+     # Sample Story
+     Anna and Sam are at the airport. They look at the big planes.
+     "Let's find our seats," Anna says. Sam smiles and carries his bag.
+     ```
+
+2. 文法ポイント解説のJSONファイル（.json）
+   - 場所: input/ ディレクトリ配下
+   - 本文と同じベース名で作成します（例: Going on a Plane.md に対して Going on a Plane.json）。
+   - 構造: オブジェクトの配列。各要素は次のフィールドを推奨します。
+     - no: 連番（文字列または数値）
+     - title: 文法ポイントの見出し
+     - eng: 例文（英語）
+     - form: 形（パターン）
+     - exp: 解説文の配列（箇条書き）
+     - jpn: 日本語訳
+   - サンプル:
+     ```json
+     [
+       {
+         "no": "1",
+         "title": "現在進行形",
+         "eng": "They are waiting at the gate.",
+         "form": "be + 動詞ing",
+         "exp": [
+           "be動詞 + 動詞ing で進行中の動作を表す",
+           "文脈によって近い未来の予定を表すこともある"
+         ],
+         "jpn": "彼らはゲートで待っている。"
+       },
+       {
+         "no": "2",
+         "title": "Let's + 動詞の原形",
+         "eng": "Let's find our seats.",
+         "form": "let's + 動詞の原形",
+         "exp": [
+           "提案・勧誘の表現",
+           "会話文で頻出"
+         ],
+         "jpn": "席を探そう。"
+       }
+     ]
+     ```
+
+解析時の対応関係:
+- ディレクトリを指定した場合（-i input）、input 内の .md をすべて処理し、同名の .json が存在すれば自動で読み込んでレポートに反映します。
+- 単一の .md を指定した場合（-i input/text.md）も、同ディレクトリ内の同名 .json を探索します。
+
 ## 出力例
 
 ```
@@ -158,11 +234,14 @@ EnglishStudyHelper/
 ## テスト実行方法
 
 ```bash
-# すべてのテストを実行
-python -m unittest discover tests
+# 依存関係を同期（未実施の場合）
+uv sync
+
+# すべてのテストを実行（unittest）
+uv run python -m unittest discover tests
 
 # 特定のテストを実行
-python -m unittest tests/test_word.py
+uv run python -m unittest tests/test_word.py
 ```
 
 ## 品詞タグについて
@@ -187,9 +266,44 @@ python -m unittest tests/test_word.py
 - `DT`: 冠詞
 - `PRP`: 代名詞
 
+## 同梱/再配布しているライブラリ
+
+本プロジェクトは以下のライブラリ／データを同梱し再配布しています。
+
+1. 英和辞書データ『ejdict-hand』（配布版）/ ejdic-hand-sqlite
+   - ライセンス: パブリックドメイン / Public Domain / CC0
+   - 配布元: くじらはんど > Web便利ツール > 英和辞書データ
+   - URL: https://kujirahand.com/web-tools/EJDictFreeDL.php
+   - 同梱物: ejdic-hand-sqlite/ejdict.sqlite3, ejdic-hand-sqlite/ddl.sql, ejdic-hand-sqlite/README.txt
+
+2. Module to manage inflections of English words（英単語活用管理モジュール）
+   - Copyright 2022 Mikio Hirabayashi
+   - License: Apache License, Version 2.0
+   - 参考: https://mikio.hatenablog.com/entry/2023/01/23/202321
+   - 同梱物: src/english_inflections/english_inflections.py, src/english_inflections/english_inflections.tsv
+
 ## ライセンス
 
-このプロジェクトはMITライセンスの下で公開されています。
+- 本リポジトリのオリジナルコードは MIT ライセンスで提供します。
+- 上記の同梱物のうち、
+  - ejdict-hand（ejdic-hand-sqlite）は パブリックドメイン/CC0 に従います。
+  - english_inflections モジュールは Apache License 2.0 に従います。
+- それぞれのライセンス条件は該当ディレクトリに含まれるファイルおよび上記リンクを参照してください。
+
+NOTICE (for the Apache-2.0 component):
+
+Copyright 2022 Mikio Hirabayashi
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 
 ## 貢献
 
