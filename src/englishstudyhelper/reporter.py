@@ -28,7 +28,8 @@ def format_table_row(word: Word, translation: Optional[str], pos_translation: st
     # 例文が長い場合は省略
     example_wrapped = textwrap.shorten(example, width=60, placeholder="...")
 
-    return f"| {word.text:<15} | {word.count:<8} | {translation:<20} | {pos_translation:<15} | {example_wrapped:<60} |"
+    # return f"| {word.text:<15} | {word.count:<8} | {translation:<20} | {pos_translation:<15} | {example_wrapped:<60} |"
+    return f"| {word.text:<15} | {translation:<20} | {pos_translation:<15} | {example_wrapped:<60} |"
 
 
 def generate_table_header() -> str:
@@ -38,8 +39,10 @@ def generate_table_header() -> str:
     Returns:
         str: 表のヘッダー
     """
-    header = "| 語句             | 出現回数 | 意味・説明             | 品詞             | 例文                                                         |"
-    separator = "|-----------------|----------|------------------------|------------------|--------------------------------------------------------------|"
+    # header = "| 語句             | 出現回数 | 意味・説明             | 品詞             | 例文                                                         |"
+    # separator = "|-----------------|----------|------------------------|------------------|--------------------------------------------------------------|"
+    header = "| 語句             |  意味・説明             | 品詞             | 例文                                                         |"
+    separator = "|-----------------|------------------------|------------------|--------------------------------------------------------------|"
     return f"{header}\n{separator}"
 
 
@@ -195,6 +198,9 @@ def generate_verb_report(words: List[Word]) -> List[str]:
         # 動詞の日本語訳を取得
         translation = dictionary.get_word_translation(base_form, 'VB') or "未登録"
 
+        # 日本語訳は30文字に制限
+        translation = translation if len(translation) <= 30 else translation[:27] + "..."
+
         row = f"| {base_form} | {past_tense} | {past_participle} | {translation} |"
 
         regular_rows.append(row)
@@ -290,6 +296,10 @@ def generate_full_report_with_grammar(
     parts: List[str] = []
     parts.append(f"# {title}")
     parts.append("")
+    if grammar_points:
+        parts.append("")
+        parts.extend(format_grammar_points_table(grammar_points))
+    parts.append("")
     parts.append("## 出現単語表")
     parts.append(generate_table_header())
     parts.extend(rows)
@@ -297,7 +307,4 @@ def generate_full_report_with_grammar(
     parts.append("## 動詞一覧")
     parts.append(generate_verb_report_table_header())
     parts.extend(verb_rows)
-    if grammar_points:
-        parts.append("")
-        parts.extend(format_grammar_points_table(grammar_points))
     return parts
